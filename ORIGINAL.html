@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>DodgeBall Ultra VI — Open World Grand Master Edition</title>
+  <style>
+    /* -------------------------------------------------------------------------
+       1. ESTILOS BASE Y RESET DE NAVEGADOR
+       ------------------------------------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #020205;
+    }
+
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #020205;
+      color: #ffffff;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    /* -------------------------------------------------------------------------
+       2. CONTENEDOR Y CANVAS PRINCIPAL
+       ------------------------------------------------------------------------- */
+    #game {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    canvas#canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* -------------------------------------------------------------------------
+       3. INTERFAZ HEADS-UP DISPLAY (HUD)
+       ------------------------------------------------------------------------- */
+    #hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 16px 24px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 13px;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease-in-out;
+      background: linear-gradient(to bottom, rgba(5, 2, 12, 0.92) 0%, rgba(5, 2, 12, 0.6) 60%, transparent 100%);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    #hud-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #hud-right {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    #hud .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+      color: #e2e8f0;
+    }
+
+    #hud .label {
+      color: #94a3b8;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 2px;
+    }
+
+    #score {
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffea00;
+      text-shadow: 0 0 16px rgba(255, 234, 0, 0.8), 0 0 30px rgba(255, 234, 0, 0.4);
+      line-height: 1;
+    }
+
+    #coinsHUD {
+      font-size: 18px;
+      font-weight: 800;
+      color: #00f7ff;
+      text-shadow: 0 0 10px rgba(0, 247, 255, 0.7);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #comboWrap {
+      font-size: 13px;
+      color: #ff007f;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #comboBarBg {
+      width: 160px;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      margin-top: 3px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #comboBar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff007f 0%, #ff7700 50%, #ffea00 100%);
+      box-shadow: 0 0 8px #ff007f;
+      transition: width 0.1s linear;
+    }
+
+    #dashMeterWrap {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #00f7ff;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    #dashBarBg {
+      width: 160px;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      margin-top: 3px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #dashBar {
+      height: 100%;
+      width: 100%;
+      background: #00f7ff;
+      box-shadow: 0 0 10px #00f7ff;
+      transition: width 0.1s linear;
+    }
+
+    #shieldMeterWrap {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #3b82f6;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    #shieldBarBg {
+      width: 160px;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      margin-top: 3px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #shieldBar {
+      height: 100%;
+      width: 100%;
+      background: #3b82f6;
+      box-shadow: 0 0 10px #3b82f6;
+      transition: width 0.1s linear;
+    }
+
+    /* -------------------------------------------------------------------------
+       4. MINIMAPA DE MUNDO ABIERTO
+       ------------------------------------------------------------------------- */
+    #minimapContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 3px solid #ff007f;
+      background: rgba(12, 4, 24, 0.88);
+      box-shadow: 0 0 20px rgba(255, 0, 127, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.8);
+      z-index: 15;
+      overflow: hidden;
+      display: none;
+      backdrop-filter: blur(6px);
+    }
+
+    #minimapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* -------------------------------------------------------------------------
+       5. BOTÓN DE PAUSA
+       ------------------------------------------------------------------------- */
+    #pauseBtn {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      padding: 10px 22px;
+      background: rgba(0, 247, 255, 0.12);
+      border: 1px solid rgba(0, 247, 255, 0.5);
+      color: #00f7ff;
+      border-radius: 999px;
+      cursor: pointer;
+      z-index: 20;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+    }
+
+    #pauseBtn:hover {
+      background: rgba(0, 247, 255, 0.3);
+      border-color: #00f7ff;
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(0, 247, 255, 0.5);
+    }
+
+    /* -------------------------------------------------------------------------
+       6. MENÚ DE PAUSA Y TIENDA INTEGRADA
+       ------------------------------------------------------------------------- */
+    #pauseMenu {
+      position: fixed;
+      inset: 0;
+      backdrop-filter: blur(16px) brightness(0.4);
+      background: rgba(6, 3, 18, 0.82);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1100;
+      animation: pausePop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes pausePop {
+      from {
+        opacity: 0;
+        transform: scale(0.94);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .pauseCard {
+      background: linear-gradient(145deg, rgba(22, 14, 42, 0.96) 0%, rgba(10, 6, 22, 0.98) 100%);
+      border: 1px solid rgba(0, 247, 255, 0.35);
+      border-radius: 24px;
+      padding: 28px;
+      width: 540px;
+      max-width: 92vw;
+      max-height: 88vh;
+      box-shadow: 0 0 60px rgba(0, 247, 255, 0.25), inset 0 0 30px rgba(255, 0, 127, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .pauseCard::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .pauseCard::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .pauseCard::-webkit-scrollbar-thumb {
+      background: rgba(0, 247, 255, 0.3);
+      border-radius: 8px;
+    }
+
+    .pauseCard::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #00f7ff, #ff007f, #ffea00, #00f7ff);
+    }
+
+    .pauseHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+
+    .pauseTitle {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 2px;
+      text-shadow: 0 0 14px #00f7ff;
+      margin: 0;
+    }
+
+    .sectionTitle {
+      font-size: 12px;
+      font-weight: 800;
+      color: #00f7ff;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* MUESTRAS Y BOTONES DE TEMAS ESTÉTICOS */
+    .themeGrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .themeBtn {
+      padding: 10px 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      letter-spacing: 0.5px;
+    }
+
+    .themeBtn:hover {
+      border-color: #00f7ff;
+      background: rgba(0, 247, 255, 0.15);
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .themeBtn.active {
+      border-color: #00f7ff;
+      background: linear-gradient(135deg, rgba(0, 247, 255, 0.25), rgba(255, 0, 127, 0.25));
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(0, 247, 255, 0.4);
+    }
+
+    /* TIENDA DE MEJORAS */
+    .shopGrid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .shopItem {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: border-color 0.2s;
+    }
+
+    .shopItem:hover {
+      border-color: rgba(0, 247, 255, 0.3);
+    }
+
+    .shopItemInfo {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .shopItemName {
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .shopItemLevel {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .buyBtn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      background: #00ff88;
+      color: #020205;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+    }
+
+    .buyBtn:hover {
+      transform: scale(1.05);
+      background: #55ffaa;
+      box-shadow: 0 0 18px rgba(0, 255, 136, 0.5);
+    }
+
+    .buyBtn:disabled {
+      background: #273530;
+      color: #527063;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* CONTROLES DE AUDIO */
+    .pauseControls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .pauseRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .pauseRow input[type=range] {
+      width: 140px;
+      accent-color: #00f7ff;
+      cursor: pointer;
+    }
+
+    /* ESTADÍSTICAS EN PAUSA */
+    .pauseStatsGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .statBox {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .statBox .lbl {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .statBox .val {
+      font-size: 16px;
+      color: #ffffff;
+      font-weight: 800;
+    }
+
+    /* BOTONES DE ACCIÓN */
+    .pauseActions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btnPrimary {
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, #00f7ff 0%, #7000ff 100%);
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0, 247, 255, 0.3);
+    }
+
+    .btnSecondary {
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .btnPrimary:hover, .btnSecondary:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.15);
+    }
+
+    /* -------------------------------------------------------------------------
+       7. MENÚ PRINCIPAL Y GAME OVER
+       ------------------------------------------------------------------------- */
+    #mainMenu, #gameOverMenu {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 35%, #2a0845 0%, #0b0214 65%, #020005 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    #mainLogo {
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      font-style: italic;
+      background: linear-gradient(135deg, #ffffff 0%, #00f7ff 50%, #ff007f 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(0, 247, 255, 0.6));
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    #mainSub {
+      color: #a5b4fc;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    #controlsHelp {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px 24px;
+      margin-bottom: 30px;
+      max-width: 520px;
+      text-align: center;
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    #controlsHelp b {
+      color: #00f7ff;
+    }
+
+    #mainButtons button, #gameOverMenu button {
+      padding: 16px 40px;
+      font-size: 15px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 900;
+      color: #050014;
+      background: linear-gradient(135deg, #00f7ff 0%, #ff007f 100%);
+      box-shadow: 0 4px 25px rgba(0, 247, 255, 0.5);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #mainButtons button:hover, #gameOverMenu button:hover {
+      transform: scale(1.06) translateY(-2px);
+      box-shadow: 0 6px 35px rgba(0, 247, 255, 0.7);
+    }
+
+    #gameOverMenu {
+      display: none;
+      z-index: 1200;
+      backdrop-filter: blur(14px);
+      background: rgba(12, 2, 8, 0.88);
+    }
+
+    #gameOverMenu h1 {
+      font-size: 52px;
+      font-weight: 900;
+      color: #ff0055;
+      text-shadow: 0 0 30px #ff0055, 0 0 60px rgba(255, 0, 85, 0.5);
+      margin-bottom: 12px;
+      font-style: italic;
+      letter-spacing: 2px;
+    }
+
+    #gameOverStats {
+      font-size: 16px;
+      color: #e2e8f0;
+      line-height: 1.9;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    #gameOverStats b {
+      color: #00f7ff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================================= -->
+  <!-- ESTRUCTURA DOM DE MENÚS Y HUD                                           -->
+  <!-- ======================================================================= -->
+
+  <!-- MENÚ PRINCIPAL -->
+  <div id="mainMenu">
+    <div id="mainLogo">⚡ DODGEBALL ULTRA VI</div>
+    <div id="mainSub">EDICIÓN MUNDO ABIERTO & SINTETIZADOR SÓNICO</div>
+    <div id="controlsHelp">
+      <b>[ CONTROLES DE JUEGO ]</b><br />
+      <b>Movimiento:</b> Teclas WASD / Flechas / Stick Izquierdo Mando<br />
+      <b>Apuntar:</b> Ratón / Stick Derecho Mando (Mira Integrada)<br />
+      <b>Disparar:</b> Clic Izquierdo / Tecla Z / Botón RB / R2 Mando<br />
+      <b>Dash Evasivo:</b> Espacio / Clic Derecho / Botón LB / L2 Mando<br />
+      <b>Menú / Pausa:</b> Tecla Escape / P / Botón Start Mando
+    </div>
+    <div id="mainButtons">
+      <button id="playBtn">▶ INICIAR PARTIDA</button>
+    </div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE PAUSA/TIENDA -->
+  <button id="pauseBtn">⏸ TIENDA / PAUSA (ESC / P)</button>
+
+  <!-- CONTENEDOR MINIMAPA -->
+  <div id="minimapContainer">
+    <canvas id="minimapCanvas"></canvas>
+  </div>
+
+  <!-- MENÚ PAUSA Y TIENDA INTEGRADA -->
+  <div id="pauseMenu">
+    <div class="pauseCard">
+      <div class="pauseHeader">
+        <h2 class="pauseTitle">PAUSA & TIENDA</h2>
+        <span id="coinsMenu" style="color:#00f7ff; font-weight:900; font-size:16px;">🪙 Tokens: 0</span>
+      </div>
+
+      <!-- SECTOR ESTÉTICTAS / SKINS -->
+      <div>
+        <div class="sectionTitle">🎨 Estética Visual (Skins de Neón)</div>
+        <div class="themeGrid">
+          <button class="themeBtn active" onclick="setTheme('gtavi')">VICE SUNSET</button>
+          <button class="themeBtn" onclick="setTheme('cyber')">CYBER NEON</button>
+          <button class="themeBtn" onclick="setTheme('synth')">SYNTHWAVE</button>
+          <button class="themeBtn" onclick="setTheme('matrix')">MATRIX</button>
+          <button class="themeBtn" onclick="setTheme('mono')">MONOCHROME</button>
+          <button class="themeBtn" onclick="setTheme('neonBeach')">NEON BEACH</button>
+          <button class="themeBtn" onclick="setTheme('pastel')">PASTEL VIBES</button>
+          <button class="themeBtn" onclick="setTheme('inferno')">INFERNO</button>
+        </div>
+      </div>
+
+      <!-- TIENDA DE MEJORAS DE COMBATE -->
+      <div>
+        <div class="sectionTitle">🛠️ Mejoras de Combate (Tokens x Bajas)</div>
+        <div class="shopGrid">
+          <div class="shopItem">
+            <div class="shopItemInfo">
+              <span class="shopItemName">⚡ Velocidad Jugador</span>
+              <span class="shopItemLevel" id="lvlSpeed">Nivel 1</span>
+            </div>
+            <button class="buyBtn" id="btnBuySpeed" onclick="buyUpgrade('speed')">5 🪙</button>
+          </div>
+          <div class="shopItem">
+            <div class="shopItemInfo">
+              <span class="shopItemName">🔫 Cadencia de Disparo</span>
+              <span class="shopItemLevel" id="lvlFireRate">Nivel 1</span>
+            </div>
+            <button class="buyBtn" id="btnBuyFireRate" onclick="buyUpgrade('fireRate')">8 🪙</button>
+          </div>
+          <div class="shopItem">
+            <div class="shopItemInfo">
+              <span class="shopItemName">🌀 Recarga de Dash</span>
+              <span class="shopItemLevel" id="lvlDashCd">Nivel 1</span>
+            </div>
+            <button class="buyBtn" id="btnBuyDashCd" onclick="buyUpgrade('dashCd')">10 🪙</button>
+          </div>
+          <div class="shopItem">
+            <div class="shopItemInfo">
+              <span class="shopItemName">🛡️ Escudo Deflector</span>
+              <span class="shopItemLevel" id="lvlShield">Nivel 0</span>
+            </div>
+            <button class="buyBtn" id="btnBuyShield" onclick="buyUpgrade('shield')">12 🪙</button>
+          </div>
+          <div class="shopItem">
+            <div class="shopItemInfo">
+              <span class="shopItemName">💥 Cadencia Multidisparo</span>
+              <span class="shopItemLevel" id="lvlMultiShot">Nivel 1</span>
+            </div>
+            <button class="buyBtn" id="btnBuyMultiShot" onclick="buyUpgrade('multiShot')">15 🪙</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTROLES DE AUDIO -->
+      <div class="pauseControls">
+        <div class="sectionTitle" style="margin-bottom:4px;">🔊 Configuración de Sonido</div>
+        <div class="pauseRow">
+          <span>Volumen Música Sintetizada:</span>
+          <input type="range" id="pMusicVol" min="0" max="100" value="50" />
+        </div>
+        <div class="pauseRow">
+          <span>Volumen Efectos de Sonido (SFX):</span>
+          <input type="range" id="pSfxVol" min="0" max="100" value="70" />
+        </div>
+      </div>
+
+      <!-- ESTADÍSTICAS EN TIEMPO REAL -->
+      <div class="pauseStatsGrid">
+        <div class="statBox">
+          <span class="lbl">Tiempo Sobrevivido</span>
+          <span class="val" id="pStatTime">0.0s</span>
+        </div>
+        <div class="statBox">
+          <span class="lbl">Puntuación Total</span>
+          <span class="val" id="pStatScore" style="color:#ffea00;">0</span>
+        </div>
+        <div class="statBox">
+          <span class="lbl">Roces de Precisión</span>
+          <span class="val" id="pStatGraze" style="color:#00ff88;">0</span>
+        </div>
+        <div class="statBox">
+          <span class="lbl">Multiplicador Máximo</span>
+          <span class="val" id="pStatCombo" style="color:#ff007f;">x1.0</span>
+        </div>
+      </div>
+
+      <!-- ACCIONES DE PAUSA -->
+      <div class="pauseActions">
+        <button class="btnPrimary" id="pResumeBtn">▶ REANUDAR PARTIDA</button>
+        <button class="btnSecondary" id="pRestartBtn">↻ REINICIAR PARTIDA</button>
+        <button class="btnSecondary" id="pExitBtn">🏠 MENÚ PRINCIPAL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENÚ DE GAME OVER -->
+  <div id="gameOverMenu">
+    <h1>HAS CAÍDO EN COMBATE</h1>
+    <div id="gameOverStats"></div>
+    <div style="display:flex; gap:14px;">
+      <button id="retryBtn">↻ REINTENTAR</button>
+      <button id="menuFromGameOverBtn">🏠 MENÚ PRINCIPAL</button>
+    </div>
+  </div>
+
+  <!-- HUD PRINCIPAL -->
+  <div id="hud">
+    <div id="hud-left">
+      <div id="score">0</div>
+      <div id="coinsHUD">🪙 Tokens: 0</div>
+      <div id="comboWrap">Combo x<span id="comboMult">1.0</span> · Roces: <span id="nearMisses">0</span></div>
+      <div id="comboBarBg"><div id="comboBar"></div></div>
+      <div id="dashMeterWrap">DASH EVASIVO (ESPACIO)<div id="dashBarBg"><div id="dashBar"></div></div></div>
+      <div id="shieldMeterWrap">ESCUDO DEFLECTOR<div id="shieldBarBg"><div id="shieldBar"></div></div></div>
+    </div>
+    <div id="hud-right">
+      <div class="row"><span class="label">Tiempo</span> <span id="time">0.0</span>s</div>
+      <div class="row"><span class="label">Amenazas</span> <span id="ballsCount">0</span></div>
+      <div class="row"><span class="label">Coordenadas</span> <span id="posHUD">X:0 Y:0</span></div>
+    </div>
+  </div>
+
+  <!-- CANVAS DEL JUEGO -->
+  <div id="game">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MOTOR LÓGICO DEL JUEGO (JAVASCRIPT COMPLETO)                           -->
+  <!-- ======================================================================= -->
+  <script>
+  (() => {
+  "use strict";
+
+  /* -------------------------------------------------------------------------
+     1. REFERENCIAS A ELEMENTOS DEL DOM Y CONFIGURACIÓN DE CANVAS
+     ------------------------------------------------------------------------- */
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const mCanvas = document.getElementById("minimapCanvas");
+  const mCtx = mCanvas.getContext("2d");
+  const minimapContainer = document.getElementById("minimapContainer");
+
+  const hud = document.getElementById("hud");
+  const timeEl = document.getElementById("time");
+  const ballsCountEl = document.getElementById("ballsCount");
+  const scoreEl = document.getElementById("score");
+  const coinsHUDEl = document.getElementById("coinsHUD");
+  const coinsMenuEl = document.getElementById("coinsMenu");
+  const comboMultEl = document.getElementById("comboMult");
+  const comboBar = document.getElementById("comboBar");
+  const dashBar = document.getElementById("dashBar");
+  const shieldBar = document.getElementById("shieldBar");
+  const nearMissesEl = document.getElementById("nearMisses");
+  const posHUDEl = document.getElementById("posHUD");
+
+  const pauseMenu = document.getElementById("pauseMenu");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const pResumeBtn = document.getElementById("pResumeBtn");
+  const pRestartBtn = document.getElementById("pRestartBtn");
+  const pExitBtn = document.getElementById("pExitBtn");
+  const pMusicVol = document.getElementById("pMusicVol");
+  const pSfxVol = document.getElementById("pSfxVol");
+
+  const pStatTime = document.getElementById("pStatTime");
+  const pStatScore = document.getElementById("pStatScore");
+  const pStatGraze = document.getElementById("pStatGraze");
+  const pStatCombo = document.getElementById("pStatCombo");
+
+  const gameOverMenu = document.getElementById("gameOverMenu");
+  const gameOverStats = document.getElementById("gameOverStats");
+  const retryBtn = document.getElementById("retryBtn");
+  const menuFromGameOverBtn = document.getElementById("menuFromGameOverBtn");
+
+  const mainMenu = document.getElementById("mainMenu");
+  const playBtn = document.getElementById("playBtn");
+
+  /* -------------------------------------------------------------------------
+     2. ESTADOS GLOBALES DE JUEGO Y DIMENSIONES DE MUNDO
+     ------------------------------------------------------------------------- */
+  let paused = false;
+  let inMainMenu = true;
+  let alive = true;
+  let DPR = Math.min(window.devicePixelRatio || 1, 2);
+  let W = 0, H = 0;
+
+  // DIMENSIONES DEL MUNDO ABIERTO (3600 x 3600)
+  const WORLD_W = 3600;
+  const WORLD_H = 3600;
+  let cameraX = 0, cameraY = 0;
+
+  // POSICIÓN DEL PUNTERO DE APUNTADO
+  let mouseX = 0, mouseY = 0;             // Pantalla
+  let worldMouseX = 0, worldMouseY = 0;   // Coordenadas absolutas de mapa
+  const keys = {};
+
+  /* -------------------------------------------------------------------------
+     3. SISTEMA DE MONEDAS, TOKENS Y TIENDA DE MEJORAS
+     ------------------------------------------------------------------------- */
+  let tokens = 0;
+  const upgrades = {
+    speed:     { level: 1, max: 5, cost: 5,  val: 8.0, inc: 1.2 },
+    fireRate:  { level: 1, max: 5, cost: 8,  val: 140, inc: 20 },  // ms entre disparos
+    dashCd:    { level: 1, max: 5, cost: 10, val: 1.8, inc: 0.25 }, // segundos
+    shield:    { level: 0, max: 3, cost: 12, val: 0,   inc: 1 },    // capas de escudo
+    multiShot: { level: 1, max: 3, cost: 15, val: 1,   inc: 1 }     // número de proyectiles
+  };
+
+  /* -------------------------------------------------------------------------
+     4. PALETAS Y PALETAS VISUALES DE TEMAS NEÓN
+     ------------------------------------------------------------------------- */
+  const themes = {
+    gtavi: {
+      bg: '#1e092b',
+      grid: 'rgba(255, 0, 127, 0.12)',
+      player: '#00f7ff',
+      ball: '#ff007f',
+      bullet: '#ffea00',
+      crosshair: '#ffea00'
+    },
+    cyber: {
+      bg: '#020205',
+      grid: 'rgba(0, 240, 255, 0.06)',
+      player: '#ffea00',
+      ball: '#ff0055',
+      bullet: '#00f0ff',
+      crosshair: '#ffea00'
+    },
+    synth: {
+      bg: '#120024',
+      grid: 'rgba(255, 0, 128, 0.10)',
+      player: '#00ffff',
+      ball: '#ffaa00',
+      bullet: '#ff0077',
+      crosshair: '#00ffff'
+    },
+    matrix: {
+      bg: '#000c00',
+      grid: 'rgba(0, 255, 65, 0.10)',
+      player: '#ffffff',
+      ball: '#00aa22',
+      bullet: '#00ff41',
+      crosshair: '#00ff41'
+    },
+    mono: {
+      bg: '#0d0d0d',
+      grid: 'rgba(255, 255, 255, 0.06)',
+      player: '#ffffff',
+      ball: '#777777',
+      bullet: '#cccccc',
+      crosshair: '#ffffff'
+    },
+    neonBeach: {
+      bg: '#121e36',
+      grid: 'rgba(0, 247, 255, 0.15)',
+      player: '#ffaa00',
+      ball: '#ff0055',
+      bullet: '#00f7ff',
+      crosshair: '#00f7ff'
+    },
+    pastel: {
+      bg: '#2b1a38',
+      grid: 'rgba(255, 180, 220, 0.15)',
+      player: '#ffffff',
+      ball: '#ff77aa',
+      bullet: '#77ffff',
+      crosshair: '#ffffff'
+    },
+    inferno: {
+      bg: '#1a0500',
+      grid: 'rgba(255, 68, 0, 0.15)',
+      player: '#ffea00',
+      ball: '#ff2200',
+      bullet: '#ff8800',
+      crosshair: '#ffea00'
+    }
+  };
+  let currentTheme = 'gtavi';
+
+  window.setTheme = function(themeName) {
+    if (themes[themeName]) {
+      currentTheme = themeName;
+      document.querySelectorAll('.themeBtn').forEach(btn => btn.classList.remove('active'));
+      if (window.event && window.event.target) {
+        window.event.target.classList.add('active');
+      }
+    }
+  };
+
+  window.buyUpgrade = function(type) {
+    const up = upgrades[type];
+    if (up && tokens >= up.cost && up.level < up.max) {
+      tokens -= up.cost;
+      up.level++;
+      up.cost = Math.floor(up.cost * 1.8);
+
+      if (type === 'speed') up.val += up.inc;
+      if (type === 'fireRate') up.val -= up.inc;
+      if (type === 'dashCd') up.val -= up.inc;
+      if (type === 'shield') {
+        player.shieldCount = Math.min(3, player.shieldCount + 1);
+        player.maxShield = Math.max(player.maxShield, player.shieldCount);
+      }
+      if (type === 'multiShot') up.val += up.inc;
+
+      updateShopUI();
+      playSfx(900, "sine", 0.1);
+    }
+  };
+
+  function updateShopUI() {
+    coinsHUDEl.textContent = `🪙 Tokens: ${tokens}`;
+    coinsMenuEl.textContent = `🪙 Tokens: ${tokens}`;
+
+    const speedUp = upgrades.speed;
+    document.getElementById('lvlSpeed').textContent = `Nivel ${speedUp.level}/${speedUp.max} (+Velocidad)`;
+    document.getElementById('btnBuySpeed').textContent = speedUp.level >= speedUp.max ? 'MAX' : `${speedUp.cost} 🪙`;
+    document.getElementById('btnBuySpeed').disabled = tokens < speedUp.cost || speedUp.level >= speedUp.max;
+
+    const fireUp = upgrades.fireRate;
+    document.getElementById('lvlFireRate').textContent = `Nivel ${fireUp.level}/${fireUp.max} (-Cooldown Disparo)`;
+    document.getElementById('btnBuyFireRate').textContent = fireUp.level >= fireUp.max ? 'MAX' : `${fireUp.cost} 🪙`;
+    document.getElementById('btnBuyFireRate').disabled = tokens < fireUp.cost || fireUp.level >= fireUp.max;
+
+    const dashUp = upgrades.dashCd;
+    document.getElementById('lvlDashCd').textContent = `Nivel ${dashUp.level}/${dashUp.max} (-Cooldown Dash)`;
+    document.getElementById('btnBuyDashCd').textContent = dashUp.level >= dashUp.max ? 'MAX' : `${dashUp.cost} 🪙`;
+    document.getElementById('btnBuyDashCd').disabled = tokens < dashUp.cost || dashUp.level >= dashUp.max;
+
+    const shieldUp = upgrades.shield;
+    document.getElementById('lvlShield').textContent = `Nivel ${shieldUp.level}/${shieldUp.max} (+Escudo)`;
+    document.getElementById('btnBuyShield').textContent = shieldUp.level >= shieldUp.max ? 'MAX' : `${shieldUp.cost} 🪙`;
+    document.getElementById('btnBuyShield').disabled = tokens < shieldUp.cost || shieldUp.level >= shieldUp.max;
+
+    const multiUp = upgrades.multiShot;
+    document.getElementById('lvlMultiShot').textContent = `Nivel ${multiUp.level}/${multiUp.max} (Cañones: ${multiUp.val})`;
+    document.getElementById('btnBuyMultiShot').textContent = multiUp.level >= multiUp.max ? 'MAX' : `${multiUp.cost} 🪙`;
+    document.getElementById('btnBuyMultiShot').disabled = tokens < multiUp.cost || multiUp.level >= multiUp.max;
+  }
+
+  /* -------------------------------------------------------------------------
+     5. OBJETOS DE ENTIDADES (JUGADOR, PROYECTILES, ENEMIGOS, PARTÍCULAS)
+     ------------------------------------------------------------------------- */
+  const player = {
+    x: WORLD_W / 2,
+    y: WORLD_H / 2,
+    r: 12,
+    targetX: WORLD_W / 2,
+    targetY: WORLD_H / 2,
+    trail: [],
+    dashCooldown: 0,
+    isDashing: false,
+    aimAngle: 0,
+    shieldCount: 0,
+    maxShield: 0
+  };
+
+  let balls = [];
+  let shockwaves = [];
+  let playerBullets = [];
+  let particles = [];
+  let floatingTexts = [];
+
+  let startTime = 0, lastSpawn = 0, lastFrame = 0, elapsed = 0, lastShotTime = 0;
+  let score = 0, comboMult = 1, comboTimer = 0, nearMissCount = 0;
+  let lastGamepadState = { lb: false, rb: false, start: false };
+
+  /* -------------------------------------------------------------------------
+     6. MOTOR DE AUDIO SINTETIZADO CON FILTRO LOWPASS PARA PAUSA
+     ------------------------------------------------------------------------- */
+  let audioCtx = null, filterNode = null, musicGain = null, sfxGain = null;
+  let musicInterval = null, musicStep = 0;
+  const synthNotes = [110, 130.81, 146.83, 164.81, 196.00, 220.00, 261.63];
+
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = "lowpass";
+      filterNode.frequency.setValueAtTime(20000, audioCtx.currentTime);
+
+      musicGain = audioCtx.createGain();
+      sfxGain = audioCtx.createGain();
+
+      musicGain.gain.setValueAtTime(pMusicVol.value / 100, audioCtx.currentTime);
+      sfxGain.gain.setValueAtTime(pSfxVol.value / 100, audioCtx.currentTime);
+
+      musicGain.connect(filterNode);
+      sfxGain.connect(filterNode);
+      filterNode.connect(audioCtx.destination);
+    } catch (e) {
+      console.warn("Audio Context Error:", e);
+    }
+  }
+
+  function playSfx(freq, type="square", duration=0.1) {
+    if (!audioCtx || audioCtx.state === "suspended") return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(g);
+      g.connect(sfxGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function startMusic() {
+    if (musicInterval) clearInterval(musicInterval);
+    musicInterval = setInterval(() => {
+      if (paused || inMainMenu || !alive || !audioCtx) return;
+      const n = synthNotes[musicStep % synthNotes.length];
+      try {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(n * 0.5, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+        osc.connect(g);
+        g.connect(musicGain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.16);
+      } catch (e) {}
+      musicStep++;
+    }, 170);
+  }
+
+  /* -------------------------------------------------------------------------
+     7. SISTEMA DE PAUSA Y CONTROL DE ESTADO
+     ------------------------------------------------------------------------- */
+  function setPauseState(state) {
+    if (inMainMenu || !alive) return;
+    paused = state;
+
+    if (paused) {
+      updateShopUI();
+      pauseMenu.style.display = "flex";
+      pStatTime.textContent = elapsed.toFixed(1) + "s";
+      pStatScore.textContent = Math.floor(score);
+      pStatGraze.textContent = nearMissCount;
+      pStatCombo.textContent = "x" + comboMult.toFixed(1);
+
+      if (audioCtx && filterNode) {
+        filterNode.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+      }
+    } else {
+      pauseMenu.style.display = "none";
+      if (audioCtx && filterNode) {
+        filterNode.frequency.exponentialRampToValueAtTime(20000, audioCtx.currentTime + 0.15);
+      }
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     8. MECÁNICAS DE JUEGO: DASH Y DISPARO MULTIDIRECCIONAL
+     ------------------------------------------------------------------------- */
+  function triggerDash() {
+    if (player.dashCooldown > 0 || !alive || paused || inMainMenu) return;
+    player.isDashing = true;
+    player.dashCooldown = upgrades.dashCd.val;
+    setTimeout(() => player.isDashing = false, 200);
+
+    const dx = Math.cos(player.aimAngle), dy = Math.sin(player.aimAngle);
+    player.targetX += dx * 160;
+    player.targetY += dy * 160;
+
+    shockwaves.push({ x: player.x, y: player.y, r: 10, alpha: 1, color: themes[currentTheme].bullet });
+    spawnParticles(player.x, player.y, 16, themes[currentTheme].bullet);
+    playSfx(600, "sine", 0.15);
+  }
+
+  function shootBullet() {
+    const now = performance.now();
+    if (now - lastShotTime < upgrades.fireRate.val || !alive || paused || inMainMenu) return;
+    lastShotTime = now;
+
+    const count = upgrades.multiShot.val;
+    const spreadAngle = 0.15; // dispersión angular
+
+    for (let i = 0; i < count; i++) {
+      let offset = 0;
+      if (count > 1) {
+        offset = (i - (count - 1) / 2) * spreadAngle;
+      }
+      const finalAngle = player.aimAngle + offset;
+      let vx = Math.cos(finalAngle) * 18;
+      let vy = Math.sin(finalAngle) * 18;
+
+      playerBullets.push({ x: player.x, y: player.y, vx, vy, r: 5 });
+    }
+
+    playSfx(880, "square", 0.05);
+  }
+
+  function spawnParticles(x, y, amount, color) {
+    for (let i = 0; i < amount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 5;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1.0,
+        color
+      });
+    }
+  }
+
+  function addFloatingText(x, y, text, color) {
+    floatingTexts.push({
+      x, y, text, color, life: 1.0, vy: -1.5
+    });
+  }
+
+  /* -------------------------------------------------------------------------
+     9. GENERADOR DE ENEMIGOS EN MUNDO ABIERTO
+     ------------------------------------------------------------------------- */
+  function spawnBall() {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.max(W, H) / 2 + 100 + Math.random() * 250;
+    let x = player.x + Math.cos(angle) * dist;
+    let y = player.y + Math.sin(angle) * dist;
+
+    x = Math.max(50, Math.min(WORLD_W - 50, x));
+    y = Math.max(50, Math.min(WORLD_H - 50, y));
+
+    // Tipos de bola: Normales, Rápidas y Pesadas
+    const typeRoll = Math.random();
+    let speed = 1.8 + Math.random() * 2.0;
+    let r = 11;
+    let hp = 1;
+    let color = null;
+
+    if (typeRoll > 0.8) {
+      speed *= 1.4; r = 8; color = "#ff007f"; // Rápida
+    } else if (typeRoll < 0.2) {
+      speed *= 0.7; r = 16; hp = 2; color = "#ffaa00"; // Pesada
+    }
+
+    balls.push({ x, y, speed, r, hp, color, grazed: false });
+    ballsCountEl.textContent = balls.length;
+  }
+
+  /* -------------------------------------------------------------------------
+     10. CONTROLADOR DE ENTRADA (MANDO Y TECLADO)
+     ------------------------------------------------------------------------- */
+  function pollGamepad() {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = gamepads[0];
+    if (!gp) return;
+
+    const axisX = gp.axes[0];
+    const axisY = gp.axes[1];
+    if (Math.abs(axisX) > 0.15 || Math.abs(axisY) > 0.15) {
+      player.targetX += axisX * upgrades.speed.val;
+      player.targetY += axisY * upgrades.speed.val;
+    }
+
+    const rx = gp.axes[2];
+    const ry = gp.axes[3];
+    if (Math.abs(rx) > 0.2 || Math.abs(ry) > 0.2) {
+      player.aimAngle = Math.atan2(ry, rx);
+    }
+
+    const lbPressed = (gp.buttons[4] && gp.buttons[4].pressed) || (gp.buttons[6] && gp.buttons[6].pressed);
+    if (lbPressed && !lastGamepadState.lb) triggerDash();
+    lastGamepadState.lb = lbPressed;
+
+    const rbPressed = (gp.buttons[5] && gp.buttons[5].pressed) || (gp.buttons[7] && gp.buttons[7].pressed);
+    if (rbPressed) shootBullet();
+    lastGamepadState.rb = rbPressed;
+
+    const startPressed = gp.buttons[9] && gp.buttons[9].pressed;
+    if (startPressed && !lastGamepadState.start) setPauseState(!paused);
+    lastGamepadState.start = startPressed;
+  }
+
+  // EVENTOS DE TECLADO Y RATÓN
+  window.addEventListener("keydown", (e) => {
+    keys[e.code] = true;
+    if (e.code === "KeyP" || e.code === "Escape") setPauseState(!paused);
+    if (e.code === "Space") triggerDash();
+    if (e.code === "KeyZ" || e.code === "KeyF") shootBullet();
+  });
+
+  window.addEventListener("keyup", (e) => keys[e.code] = false);
+
+  window.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+
+  window.addEventListener("mousedown", (e) => {
+    if (e.button === 0) shootBullet();
+    if (e.button === 2) {
+      e.preventDefault();
+      triggerDash();
+    }
+  });
+
+  window.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    mCanvas.width = 150 * DPR;
+    mCanvas.height = 150 * DPR;
+    mCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  /* -------------------------------------------------------------------------
+     11. BUCLE DE ACTUALIZACIÓN FÍSICA Y LÓGICA
+     ------------------------------------------------------------------------- */
+  function update(dt, now) {
+    pollGamepad();
+
+    // Movimiento con WASD / Flechas
+    let moveX = 0, moveY = 0;
+    if (keys["KeyA"] || keys["ArrowLeft"]) moveX -= 1;
+    if (keys["KeyD"] || keys["ArrowRight"]) moveX += 1;
+    if (keys["KeyW"] || keys["ArrowUp"]) moveY -= 1;
+    if (keys["KeyS"] || keys["ArrowDown"]) moveY += 1;
+
+    if (moveX !== 0 && moveY !== 0) {
+      moveX *= 0.7071;
+      moveY *= 0.7071;
+    }
+
+    const currentSpeed = upgrades.speed.val;
+    player.targetX += moveX * currentSpeed;
+    player.targetY += moveY * currentSpeed;
+
+    // Límites de mapa abierto
+    player.targetX = Math.max(20, Math.min(WORLD_W - 20, player.targetX));
+    player.targetY = Math.max(20, Math.min(WORLD_H - 20, player.targetY));
+
+    player.x += (player.targetX - player.x) * 0.25;
+    player.y += (player.targetY - player.y) * 0.25;
+
+    // Actualizar Cámara centrada en jugador
+    cameraX = Math.max(0, Math.min(WORLD_W - W, player.x - W / 2));
+    cameraY = Math.max(0, Math.min(WORLD_H - H, player.y - H / 2));
+
+    // Ratón en coordenadas de mundo
+    worldMouseX = mouseX + cameraX;
+    worldMouseY = mouseY + cameraY;
+    player.aimAngle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+
+    posHUDEl.textContent = `X:${Math.floor(player.x)} Y:${Math.floor(player.y)}`;
+
+    if (player.dashCooldown > 0) {
+      player.dashCooldown -= dt / 60;
+      dashBar.style.width = Math.max(0, (1 - player.dashCooldown / upgrades.dashCd.val) * 100) + "%";
+    }
+
+    if (upgrades.shield.level > 0) {
+      shieldBar.style.width = (player.shieldCount / Math.max(1, upgrades.shield.level)) * 100 + "%";
+    } else {
+      shieldBar.style.width = "0%";
+    }
+
+    if (now - lastSpawn > Math.max(250, 2500 - elapsed * 30) && balls.length < 75) {
+      spawnBall();
+      lastSpawn = now;
+    }
+
+    player.trail.push({ x: player.x, y: player.y });
+    if (player.trail.length > 12) player.trail.shift();
+
+    // Actualizar Proyectiles
+    for (let i = playerBullets.length - 1; i >= 0; i--) {
+      const bul = playerBullets[i];
+      bul.x += bul.vx * dt;
+      bul.y += bul.vy * dt;
+
+      if (bul.x < 0 || bul.x > WORLD_W || bul.y < 0 || bul.y > WORLD_H) {
+        playerBullets.splice(i, 1);
+        continue;
+      }
+
+      for (let j = balls.length - 1; j >= 0; j--) {
+        const b = balls[j];
+        const dx = bul.x - b.x, dy = bul.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < bul.r + b.r) {
+          b.hp--;
+          playerBullets.splice(i, 1);
+
+          if (b.hp <= 0) {
+            shockwaves.push({ x: b.x, y: b.y, r: 6, alpha: 1, color: "#00f7ff" });
+            spawnParticles(b.x, b.y, 10, b.color || themes[currentTheme].ball);
+            balls.splice(j, 1);
+
+            tokens += 1;
+            const earnedScore = Math.floor(50 * comboMult);
+            score += earnedScore;
+
+            addFloatingText(b.x, b.y, `+${earnedScore}`, "#ffea00");
+            coinsHUDEl.textContent = `🪙 Tokens: ${tokens}`;
+            playSfx(1200, "sine", 0.05);
+            ballsCountEl.textContent = balls.length;
+          } else {
+            playSfx(400, "triangle", 0.04);
+          }
+          break;
+        }
+      }
+    }
+
+    // Actualizar Enemigos y Colisiones
+    for (let i = balls.length - 1; i >= 0; i--) {
+      const b = balls[i];
+      const dx = player.x - b.x, dy = player.y - b.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+
+      b.x += (dx / d) * b.speed * dt;
+      b.y += (dy / d) * b.speed * dt;
+
+      // Roces de Precisión (Graze)
+      if (d < player.r + b.r + 24 && d >= player.r + b.r && !b.grazed) {
+        b.grazed = true;
+        nearMissCount++;
+        nearMissesEl.textContent = nearMissCount;
+        comboMult = Math.min(5, comboMult + 0.2);
+        comboTimer = 2.0;
+        score += 30 * comboMult;
+        addFloatingText(player.x, player.y - 15, "GRAZE!", "#00ff88");
+        playSfx(523.25, "sine", 0.08);
+      }
+
+      // Colisión Directa con el Jugador
+      if (d < player.r + b.r - 2 && !player.isDashing) {
+        if (player.shieldCount > 0) {
+          player.shieldCount--;
+          shockwaves.push({ x: player.x, y: player.y, r: 25, alpha: 1, color: "#3b82f6" });
+          spawnParticles(b.x, b.y, 14, "#3b82f6");
+          balls.splice(i, 1);
+          playSfx(300, "sine", 0.2);
+          addFloatingText(player.x, player.y - 20, "ESCUDO BLOQUEADO", "#3b82f6");
+          continue;
+        }
+
+        alive = false;
+        playSfx(100, "sawtooth", 0.4);
+        setTimeout(() => {
+          gameOverStats.innerHTML = `Tiempo Sobrevivido: <b>${elapsed.toFixed(1)}s</b><br>Puntuación Total: <b>${Math.floor(score)}</b><br>Tokens Ganados: <b>${tokens}</b>`;
+          gameOverMenu.style.display = "flex";
+        }, 400);
+        return;
+      }
+    }
+
+    // Actualizar Ondas Expansivas
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      const sw = shockwaves[i];
+      sw.r += 4.5 * dt;
+      sw.alpha -= 0.04 * dt;
+      if (sw.alpha <= 0) shockwaves.splice(i, 1);
+    }
+
+    // Actualizar Partículas
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= 0.03 * dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    // Actualizar Textos Flotantes
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      const ft = floatingTexts[i];
+      ft.y += ft.vy * dt;
+      ft.life -= 0.025 * dt;
+      if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     12. RENDERIZADO EN MINIMAPA
+     ------------------------------------------------------------------------- */
+  function drawMinimap() {
+    const t = themes[currentTheme];
+    mCtx.fillStyle = "rgba(10, 4, 20, 0.95)";
+    mCtx.fillRect(0, 0, 150, 150);
+
+    const scaleX = 150 / WORLD_W;
+    const scaleY = 150 / WORLD_H;
+
+    // Bordes del minimapa
+    mCtx.strokeStyle = "rgba(255, 0, 127, 0.4)";
+    mCtx.lineWidth = 1;
+    mCtx.strokeRect(0, 0, 150, 150);
+
+    // Enemigos en Minimapa
+    mCtx.fillStyle = t.ball;
+    balls.forEach(b => {
+      mCtx.beginPath();
+      mCtx.arc(b.x * scaleX, b.y * scaleY, 2, 0, Math.PI * 2);
+      mCtx.fill();
+    });
+
+    // Jugador en Minimapa
+    mCtx.fillStyle = t.player;
+    mCtx.shadowColor = t.player;
+    mCtx.shadowBlur = 6;
+    mCtx.beginPath();
+    mCtx.arc(player.x * scaleX, player.y * scaleY, 4, 0, Math.PI * 2);
+    mCtx.fill();
+    mCtx.shadowBlur = 0;
+  }
+
+  /* -------------------------------------------------------------------------
+     13. MIRA TIPO CROSSHAIR EN LA POSICIÓN DEL PUNTERO (SIN LÍNEA DE APUNTADO)
+     ------------------------------------------------------------------------- */
+  function drawCrosshair() {
+    if (paused || !alive || inMainMenu) return;
+
+    const t = themes[currentTheme];
+    ctx.save();
+    ctx.strokeStyle = t.crosshair;
+    ctx.lineWidth = 2;
+
+    // Círculo exterior de la mira
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 10, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Cruz central
+    ctx.beginPath();
+    ctx.moveTo(mouseX - 16, mouseY);
+    ctx.lineTo(mouseX + 16, mouseY);
+    ctx.moveTo(mouseX, mouseY - 16);
+    ctx.lineTo(mouseX, mouseY + 16);
+    ctx.stroke();
+
+    // Punto central de alta precisión
+    ctx.fillStyle = t.crosshair;
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* -------------------------------------------------------------------------
+     14. RENDERIZADO PRINCIPAL (CANVAS DE JUEGO)
+     ------------------------------------------------------------------------- */
+  function draw() {
+    const t = themes[currentTheme];
+    ctx.fillStyle = t.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    // APLICAR TRASLACIÓN DE CÁMARA
+    ctx.translate(-cameraX, -cameraY);
+
+    // Malla de Fondo del Mundo Abierto
+    ctx.strokeStyle = t.grid;
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= WORLD_W; x += 80) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, WORLD_H);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= WORLD_H; y += 80) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(WORLD_W, y);
+      ctx.stroke();
+    }
+
+    // Límites del Mundo (Paredes Neón)
+    ctx.strokeStyle = "#ff007f";
+    ctx.lineWidth = 6;
+    ctx.shadowColor = "#ff007f";
+    ctx.shadowBlur = 15;
+    ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+    ctx.shadowBlur = 0;
+
+    // Renderizar Partículas
+    particles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Renderizar Ondas Expansivas
+    shockwaves.forEach(sw => {
+      ctx.save();
+      ctx.strokeStyle = sw.color;
+      ctx.globalAlpha = Math.max(0, sw.alpha);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // Renderizar Proyectiles del Jugador
+    playerBullets.forEach(bul => {
+      ctx.save();
+      ctx.shadowColor = t.bullet;
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = t.bullet;
+      ctx.beginPath();
+      ctx.arc(bul.x, bul.y, bul.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Renderizar Enemigos
+    balls.forEach(b => {
+      ctx.save();
+      const col = b.color || t.ball;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Renderizar Jugador (SE HA RETIRADO LA LÍNEA DE PUNTERÍA AL CURSOR)
+    if (alive && !inMainMenu) {
+      // Estela de Movimiento
+      player.trail.forEach((tr, i) => {
+        ctx.globalAlpha = (i / player.trail.length) * 0.35;
+        ctx.fillStyle = player.isDashing ? "#00f7ff" : t.player;
+        ctx.beginPath();
+        ctx.arc(tr.x, tr.y, player.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Cuerpo Principal del Jugador
+      ctx.save();
+      ctx.shadowColor = player.isDashing ? "#00f7ff" : t.player;
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = player.isDashing ? "#ffffff" : t.player;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Indicador de Dirección del Cañón (Corto, solo orientado)
+      ctx.strokeStyle = t.bullet;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(player.x, player.y);
+      ctx.lineTo(player.x + Math.cos(player.aimAngle) * 20, player.y + Math.sin(player.aimAngle) * 20);
+      ctx.stroke();
+
+      // Escudo Deflector Visual Alrededor del Jugador
+      if (player.shieldCount > 0) {
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = "#3b82f6";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r + 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // Renderizar Textos Flotantes
+      floatingTexts.forEach(ft => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.life);
+        ctx.font = "900 13px 'Segoe UI', sans-serif";
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = "#000";
+        ctx.shadowBlur = 4;
+        ctx.fillText(ft.text, ft.x - 12, ft.y);
+        ctx.restore();
+      });
+    }
+
+    ctx.restore(); // FIN DE TRASLACIÓN DE CÁMARA
+
+    // DIBUJAR MIRA Y MINIMAPA EN COORDENADAS DE PANTALLA
+    if (alive && !inMainMenu) {
+      drawCrosshair();
+      drawMinimap();
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     15. BUCLE PRINCIPAL DE EJECUCIÓN (FRAME LOOP)
+     ------------------------------------------------------------------------- */
+  function loop(now) {
+    requestAnimationFrame(loop);
+    let dt = (now - lastFrame) / 16.6667;
+    lastFrame = now;
+
+    if (!paused && alive && !inMainMenu) {
+      elapsed = (now - startTime) / 1000;
+      timeEl.textContent = elapsed.toFixed(1);
+
+      comboTimer -= dt / 60;
+      if (comboTimer <= 0) comboMult = Math.max(1, comboMult - 0.02 * dt);
+      comboMultEl.textContent = comboMult.toFixed(1);
+      comboBar.style.width = ((comboMult - 1) / 4 * 100) + "%";
+
+      score += 10 * (dt / 60) * comboMult;
+      scoreEl.textContent = Math.floor(score);
+
+      update(dt, now);
+    }
+    draw();
+  }
+  requestAnimationFrame(loop);
+
+  /* -------------------------------------------------------------------------
+     16. INICIALIZACIÓN DE PARTIDA
+     ------------------------------------------------------------------------- */
+  function startRun() {
+    initAudio();
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    startMusic();
+
+    inMainMenu = false;
+    paused = false;
+    alive = true;
+
+    mainMenu.style.display = "none";
+    gameOverMenu.style.display = "none";
+    pauseMenu.style.display = "none";
+
+    hud.style.opacity = "1";
+    pauseBtn.style.opacity = "1";
+    pauseBtn.style.pointerEvents = "auto";
+    minimapContainer.style.display = "block";
+
+    balls = [];
+    shockwaves = [];
+    playerBullets = [];
+    particles = [];
+    floatingTexts = [];
+
+    player.x = player.targetX = WORLD_W / 2;
+    player.y = player.targetY = WORLD_H / 2;
+    player.shieldCount = upgrades.shield.level;
+
+    score = 0;
+    comboMult = 1;
+    nearMissCount = 0;
+    startTime = performance.now();
+    lastSpawn = startTime;
+
+    coinsHUDEl.textContent = `🪙 Tokens: ${tokens}`;
+  }
+
+  // EVENT LISTENERS DE BOTONES DE MENÚ
+  playBtn.addEventListener("click", startRun);
+  pauseBtn.addEventListener("click", () => setPauseState(!paused));
+  pResumeBtn.addEventListener("click", () => setPauseState(false));
+  pRestartBtn.addEventListener("click", startRun);
+
+  pExitBtn.addEventListener("click", () => {
+    paused = false;
+    inMainMenu = true;
+    pauseMenu.style.display = "none";
+    mainMenu.style.display = "flex";
+    hud.style.opacity = "0";
+    pauseBtn.style.opacity = "0";
+    minimapContainer.style.display = "none";
+  });
+
+  retryBtn.addEventListener("click", startRun);
+
+  menuFromGameOverBtn.addEventListener("click", () => {
+    inMainMenu = true;
+    gameOverMenu.style.display = "none";
+    mainMenu.style.display = "flex";
+    hud.style.opacity = "0";
+    pauseBtn.style.opacity = "0";
+    minimapContainer.style.display = "none";
+  });
+
+  pMusicVol.addEventListener("input", (e) => {
+    if (musicGain && audioCtx) {
+      musicGain.gain.setValueAtTime(e.target.value / 100, audioCtx.currentTime);
+    }
+  });
+
+  pSfxVol.addEventListener("input", (e) => {
+    if (sfxGain && audioCtx) {
+      sfxGain.gain.setValueAtTime(e.target.value / 100, audioCtx.currentTime);
+    }
+  });
+
+  })();
+  </script>
+</body>
+</html>
